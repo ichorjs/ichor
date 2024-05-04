@@ -1,0 +1,10 @@
+{
+  "name": "ichor",
+  "version": "1.0.0",
+  "description": "A discord api wrapper",
+  "main": "./package/index.js",
+  "repository": "https://github.com/ichorjs/ichor.git",
+  "author": "wayv, blue obisidan",
+  "license": "Eclipse Public License 2.0",
+  "private": false
+}
