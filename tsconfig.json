@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "lib": ["ESNext", "DOM"],
+        "experimentalDecorators": true,
+        "esModuleInterop": true,
+        "moduleDetection": "force",
+
+        "module": "CommonJS",
+        "target": "ESNext",
+
+        "strict": true,
+        "strictPropertyInitialization": true,
+
+        "outDir": "./package",
+        "resolveJsonModule": true
+    }
+}
