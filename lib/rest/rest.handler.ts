@@ -1,15 +1,16 @@
-import axios, { AxiosRequestConfig, AxiosResponse, Method } from "axios";
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, Method } from "axios";
 import { urls } from "../Constants";
-import { RequestGenomeParams} from "../types/core";
+import { RequestGenomeParams } from "../types/core";
 import Client from "../Client";
 
 import { repository, version } from "../../package.json";
+import { API } from "../types/api";
 
 export default class {
-    public ratelimits: { [key: string]: number } = {};
     public queue: string[] = [];
+    #timeout!: Timer;
 
-    constructor(private client: Client) {}
+    constructor(private client: Client) { }
 
     public async makeRequest<K extends object, R>
         (endpoint: string, options?: RequestGenomeParams<K>) {
@@ -23,37 +24,65 @@ export default class {
         );
     }
 
-    public handleRequest(endpoint: string, response: AxiosResponse) {
-        //console.log(endpoint, response)
-    }
-
     private async _make<R>(
-        endpoint: string, 
-        auth: boolean, 
+        endpoint: string,
+        auth: boolean,
         method: Method,
         json: object | undefined) {
-            
-        const options: AxiosRequestConfig = {};
-        const headers: any = {};
 
-        if (auth) {
-            headers["Authorization"] = this.client.options.token;
+            console.log(this.queue.length < 50)
+
+        if (this.queue.length < 50) {
+            if (!this.#timeout) {
+                this.#timeout = setTimeout(() => this.queue = [], 1000);
+            }
+
+            const options: AxiosRequestConfig = {};
+            const headers: any = {};
+
+            headers["User-Agent"] = `Ichor (${repository}, ${version})`;
+
+            if (auth) {
+                headers["Authorization"] = this.client.options.token;
+            }
+
+            if (json) {
+                headers["Content-Type"] = "application/json";
+                options.data = JSON.stringify(json);
+            }
+
+            const handleError = (err: AxiosError) => {
+                if (err.response) {
+                    if (err.response.status === 429) {
+                        const ratelimit = err.response.data as API.Ratelimit;
+
+                        this.client.emit("ratelimit");
+                        console.log(err.request)
+                        if (err.response.headers["X-RateLimit-Remaining"]) {
+                            setTimeout(() => 
+                                this._make(endpoint, auth, method, json), ratelimit.retry_after * 3);
+                        }
+                    }
+                } else {
+                    this.client.emit("debug", "No error response");
+                }
+            }
+
+            const handleRequest = (res: AxiosResponse) => {
+                this.queue.push(endpoint);
+            }
+
+            return axios<R>({
+                url: `${urls.rest}${endpoint}`,
+                method,
+                headers,
+                ...options
+            })
+            .then(handleRequest)
+            .catch(handleError);
+        } else {
+
+            this.client.emit("debug", "Hit global limit in 1 second."); // Shouldn't be possible
         }
-
-        if (json) {
-            headers["Content-Type"] = "application/json";
-            options.data = JSON.stringify(json);
-        }
-
-        //console.log(options)
-
-        return axios<R>({ 
-            url: `${urls.rest}${endpoint}`,
-            method,
-            headers,
-            ...options
-        })
-        .then((res) => this.handleRequest(endpoint, res))
-        .catch((err) => console.log(err));
     }
 }

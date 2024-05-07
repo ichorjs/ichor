@@ -9,3 +9,8 @@ export interface RequestGenomeParams<K extends object> {
     json?: K;
     method: Method;
 }
+
+export type VioletClientEvents = {
+    ratelimit: () => void;
+    debug: (message: string) => void;
+}

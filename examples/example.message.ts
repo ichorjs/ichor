@@ -9,6 +9,6 @@ const client = new Client({
 client.rest.makeRequest(restRoutes.message("749619975492206653"), {
     method: "POST",
     json: {
-        content: "get had1"
+        content: "e"
     }
 });

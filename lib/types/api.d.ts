@@ -1,7 +1,7 @@
 export namespace API {
     interface Ratelimit {
         message: string;
-        retry_after: string;
+        retry_after: number;
         global: boolean;
     }
 
